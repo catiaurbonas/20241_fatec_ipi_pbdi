@@ -86,6 +86,40 @@ DO $$
 END;
 $$
 
+-- cursores com parametros nomeados e por ordem
+-- exibir nomes dos youtubers que começarm a partir de 2010 
+-- e tem pelo menos 60 milhoes de isncritos
+DO $$
+	DECLARE
+		v_ano INT := 2010;
+		v_inscritos INT := 60000000;
+		-- 1.declaração cursor
+		cur_ano_inscritos CURSOR (ano INT, inscritos INT) FOR 
+		SELECT youtuber FROM
+		tb_youtubers WHERE started >= ano AND subscribers >= inscritos;
+		v_youtuber VARCHAR(200);
+	BEGIN
+	    -- 2. Abertura do Cursor
+		--execute apenas um dos dois comandos OPEN a seguir
+		-- passando argumentos pela ordem
+		--OPEN cur_ano_inscritos (v_ano, v_inscritos);
+		--passando argumentos por nome
+		--OPEN cur_ano_inscritos (inscritos := v_inscritos, ano := v_ano);
+		-- ou
+		OPEN cur_ano_inscritos (ano := v_ano, inscritos := v_inscritos);
+		LOOP
+		    -- buscar o nome 
+			-- 3.Recuperação dados 
+			FETCH cur_ano_inscritos INTO v_youtuber;
+			-- sair se for o caso
+			EXIT WHEN NOT FOUND;
+			--exibir se puder
+			RAISE NOTICE '%', v_youtuber;
+		END LOOP;
+		--4.Fechamento 
+		CLOSE cur_ano_inscritos;
+	END;
+$$
 
 
 
