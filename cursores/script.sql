@@ -110,49 +110,47 @@ DO $$
 		LOOP
 		    -- buscar o nome 
 			-- 3.Recuperação dados 
-			FETCH cur_ano_inscritos INTO tupla;
+			FETCH cur_ano_inscritos INTO v_youtuber;
 			-- sair se for o caso
 			EXIT WHEN NOT FOUND;
 			--exibir se puder
-			RAISE NOTICE '%', tupla;
+			RAISE NOTICE '%', v_youtuber;
 		END LOOP;
-		--4.Fechamento do cursor
+		--4.Fechamento 
 		CLOSE cur_ano_inscritos;
 	END;
 $$
 
 DO $$
-DECLARE
-  -- 1. cursor não vinculado
-  cur_delete REFCURSOR;
-  tupla RECORD;
-BEGIN
-   -- scroll (rolagem - desce apagando sobe mostrando) para poder voltar ao início = lista duplamente ligada vai e volta
-   OPEN cur_delete SCROLL FOR
-   SELECT * FROM tb_youtubers;
-   LOOP
-      -- pego a proxima linha
-      FETCH cur_delete INTO tupla;
-	  -- saio se for o caso, found no ambiente postgre variavel especial booleana
-      EXIT WHEN NOT FOUND;
-	  -- olho para video count da tupla se for nulo faço delete
-      IF tupla.video_count IS NULL THEN
-	     -- current off - linha atual do cursor, para onde ele esta apontando
-         DELETE FROM tb_youtubers WHERE CURRENT OF cur_delete;
-      END IF;
-    END LOOP;
-    -- loop para exibir item a item, de baixo para cima
-    LOOP
-       FETCH BACKWARD FROM cur_delete INTO tupla;
-       EXIT WHEN NOT FOUND;
-       RAISE NOTICE '%', tupla;
-    END LOOP;
-    CLOSE cur_delete;
-END;
+	DECLARE
+	cur_rank_nome REFCURSOR;
+    v_videocount INT = 1000;
+	v_nome_tabela VARCHAR(200) := 'tb_youtubers';
+	v_youtuber VARCHAR(200);
+	v_category_1 VARCHAR(200) := 'Sport';
+	v_category_2 VARCHAR(200) := 'Music';
+	BEGIN
+		OPEN cur_rank_nome FOR EXECUTE
+			format
+			(
+				'
+				SELECT rank, youtuber
+				FROM
+				%s
+				WHERE video_count >= $1
+				AND category in ($2, $3)
+				'
+				,
+				v_nome_tabela
+			) USING v_videocount, v_category_1, v_category_2;
+		LOOP
+			FETCH cur_rank_nome INTO v_youtuber;
+			EXIT WHEN NOT FOUND;
+			RAISE NOTICE '%', v_youtuber;
+		END LOOP;
+		CLOSE cur_rank_nome;
+	END;
 $$
-
-
-
 
 
 
