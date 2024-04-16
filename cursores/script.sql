@@ -110,18 +110,46 @@ DO $$
 		LOOP
 		    -- buscar o nome 
 			-- 3.Recuperação dados 
-			FETCH cur_ano_inscritos INTO v_youtuber;
+			FETCH cur_ano_inscritos INTO tupla;
 			-- sair se for o caso
 			EXIT WHEN NOT FOUND;
 			--exibir se puder
-			RAISE NOTICE '%', v_youtuber;
+			RAISE NOTICE '%', tupla;
 		END LOOP;
-		--4.Fechamento 
+		--4.Fechamento do cursor
 		CLOSE cur_ano_inscritos;
 	END;
 $$
 
-
+DO $$
+DECLARE
+  -- 1. cursor não vinculado
+  cur_delete REFCURSOR;
+  tupla RECORD;
+BEGIN
+   -- scroll (rolagem - desce apagando sobe mostrando) para poder voltar ao início = lista duplamente ligada vai e volta
+   OPEN cur_delete SCROLL FOR
+   SELECT * FROM tb_youtubers;
+   LOOP
+      -- pego a proxima linha
+      FETCH cur_delete INTO tupla;
+	  -- saio se for o caso, found no ambiente postgre variavel especial booleana
+      EXIT WHEN NOT FOUND;
+	  -- olho para video count da tupla se for nulo faço delete
+      IF tupla.video_count IS NULL THEN
+	     -- current off - linha atual do cursor, para onde ele esta apontando
+         DELETE FROM tb_youtubers WHERE CURRENT OF cur_delete;
+      END IF;
+    END LOOP;
+    -- loop para exibir item a item, de baixo para cima
+    LOOP
+       FETCH BACKWARD FROM cur_delete INTO tupla;
+       EXIT WHEN NOT FOUND;
+       RAISE NOTICE '%', tupla;
+    END LOOP;
+    CLOSE cur_delete;
+END;
+$$
 
 
 
